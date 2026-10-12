@@ -1,0 +1,18 @@
+<?php
+/** @var \Magento\Backend\Block\Template $block */
+$layoutHandles = $block->getLayout()->getUpdate()->getHandles();
+?>
+<nav class="admin__page-nav">
+    <ul class="admin__page-nav-items">
+        <li class="admin__page-nav-item<?= in_array('mdoq_infrastructure_index_index', $layoutHandles, true) ? ' _active' : '' ?>">
+            <a class="admin__page-nav-link" href="<?= $block->escapeUrl($block->getUrl('mdoq_infrastructure/index/index')) ?>">
+                <span><?= $block->escapeHtml(__('Varnish')) ?></span>
+            </a>
+        </li>
+        <li class="admin__page-nav-item<?= in_array('mdoq_infrastructure_php_index', $layoutHandles, true) ? ' _active' : '' ?>">
+            <a class="admin__page-nav-link" href="<?= $block->escapeUrl($block->getUrl('mdoq_infrastructure/php/index')) ?>">
+                <span><?= $block->escapeHtml(__('PHP')) ?></span>
+            </a>
+        </li>
+    </ul>
+</nav>

@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+    <menu>
+        <add id="MDOQ_Infrastructure::root" title="MDOQ" module="MDOQ_Infrastructure" sortOrder="100" parent="Magento_Backend::system" resource="MDOQ_Infrastructure::root" />
+        <add id="MDOQ_Infrastructure::infrastructure" title="Infrastructure" translate="title" module="MDOQ_Infrastructure" sortOrder="10" parent="MDOQ_Infrastructure::root" action="mdoq_infrastructure/index/index" resource="MDOQ_Infrastructure::infrastructure" />
+    </menu>
+</config>

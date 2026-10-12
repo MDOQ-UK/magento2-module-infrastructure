@@ -1,0 +1,47 @@
+<?php
+/** @var \MDOQ\Infrastructure\Block\Adminhtml\PhpDiagnostics $block */
+$result = $block->getFpmStatus();
+$renderValue = function ($value) use (&$renderValue, $block): string {
+    if (is_array($value)) {
+        if (!$value) {
+            return '<span class="mdoq-fpm-null">[]</span>';
+        }
+
+        $html = '<dl class="mdoq-fpm-nested">';
+        foreach ($value as $key => $item) {
+            $label = $block->escapeHtml((string)$key);
+            $html .= '<div><dt>' . $label . '</dt><dd>' . $renderValue($item) . '</dd></div>';
+        }
+
+        return $html . '</dl>';
+    }
+
+    if ($value === null) {
+        return '<span class="mdoq-fpm-null">null</span>';
+    }
+    if (is_bool($value)) {
+        return $block->escapeHtml($value ? 'true' : 'false');
+    }
+    if (is_scalar($value)) {
+        return $block->escapeHtml((string)$value);
+    }
+
+    return $block->escapeHtml((string)json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+};
+?>
+<div id="mdoq-fpm-status">
+    <div class="mdoq-fpm-toolbar">
+        <p><?= $block->escapeHtml(__('PHP-FPM status')) ?></p>
+        <button class="action-secondary" type="button" data-fpm-refresh><?= $block->escapeHtml(__('Refresh')) ?></button>
+    </div>
+
+    <?php if (empty($result['available'])): ?>
+        <div class="message message-notice"><div><?= $block->escapeHtml($result['reason']) ?></div></div>
+    <?php else: ?>
+        <dl class="mdoq-fpm-status-list">
+            <?php foreach ($result['status'] as $key => $value): ?>
+                <div><dt><?= $block->escapeHtml((string)$key) ?></dt><dd><?= $renderValue($value) ?></dd></div>
+            <?php endforeach; ?>
+        </dl>
+    <?php endif; ?>
+</div>

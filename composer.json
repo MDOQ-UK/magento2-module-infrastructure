@@ -1,0 +1,13 @@
+{
+    "name": "mdoq/infrastructure",
+    "description": "MDOQ infrastructure module for MAP integration",
+    "type": "magento2-module",
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "MDOQ\\Infrastructure\\": ""
+        }
+    }
+}

@@ -1,0 +1,157 @@
+<?php
+/** @var \MDOQ\Infrastructure\Block\Adminhtml\PhpDiagnostics $block */
+$data = $block->getOpcacheDashboard();
+?>
+<div id="mdoq-opcache-dashboard">
+    <div class="mdoq-opcache-toolbar">
+        <div>
+            <p><?= $block->escapeHtml(__('Zend OPcache')) ?> <?= $block->escapeHtml((string)($data['version'] ?? '')) ?></p>
+            <?php if (!empty($data['status']['cache_full'])): ?>
+                <div class="message message-warning"><div><?= $block->escapeHtml(__('The OPcache shared memory is full.')) ?></div></div>
+            <?php endif; ?>
+            <?php if (!empty($data['status']['restart_pending'])): ?>
+                <div class="message message-notice"><div><?= $block->escapeHtml(__('An OPcache restart is pending.')) ?></div></div>
+            <?php endif; ?>
+        </div>
+        <button class="action-secondary" type="button" data-opcache-refresh><?= $block->escapeHtml(__('Refresh')) ?></button>
+    </div>
+
+    <?php if (empty($data['available'])): ?>
+        <div class="message message-notice"><div><?= $block->escapeHtml($data['reason']) ?></div></div>
+    <?php else: ?>
+        <?php
+        $status = $data['status'];
+        $memoryPercent = $status['memory_usage_percent'];
+        $keyPercent = $status['key_usage_percent'];
+        $jit = $status['jit'];
+        $jitSize = (int)($jit['buffer_size'] ?? 0);
+        $jitUsed = max(0, $jitSize - (int)($jit['buffer_free'] ?? $jitSize));
+        $jitPercent = $jitSize > 0 ? round(100 * $jitUsed / $jitSize, 1) : null;
+        $scripts = $data['scripts'];
+        $pageSize = 200;
+        ?>
+
+        <div class="mdoq-opcache-metrics">
+            <div class="mdoq-opcache-metric">
+                <span><?= $block->escapeHtml(__('Memory in use')) ?></span>
+                <strong><?= $block->escapeHtml($block->formatBytes($status['used_memory'] + $status['wasted_memory'])) ?></strong>
+                <small><?= $block->escapeHtml($block->formatBytes($status['memory_limit'])) ?> <?= $block->escapeHtml(__('total')) ?></small>
+                <?php if ($memoryPercent !== null): ?><progress max="100" value="<?= $block->escapeHtmlAttr((string)$memoryPercent) ?>"></progress><small><?= $block->escapeHtml((string)$memoryPercent) ?>%</small><?php endif; ?>
+            </div>
+            <div class="mdoq-opcache-metric">
+                <span><?= $block->escapeHtml(__('Hit rate')) ?></span>
+                <strong><?= $block->escapeHtml(number_format((float)$status['hit_rate'], 2)) ?>%</strong>
+                <small><?= $block->escapeHtml(number_format((int)$status['hits'])) ?> <?= $block->escapeHtml(__('hits')) ?> / <?= $block->escapeHtml(number_format((int)$status['misses'])) ?> <?= $block->escapeHtml(__('misses')) ?></small>
+            </div>
+            <div class="mdoq-opcache-metric">
+                <span><?= $block->escapeHtml(__('Cached scripts')) ?></span>
+                <strong><?= $block->escapeHtml(number_format((int)$status['cached_scripts'])) ?></strong>
+                <small><?= $block->escapeHtml(number_format((int)$status['blacklist_misses'])) ?> <?= $block->escapeHtml(__('blacklist misses')) ?></small>
+            </div>
+            <div class="mdoq-opcache-metric">
+                <span><?= $block->escapeHtml(__('Key usage')) ?></span>
+                <strong><?= $keyPercent === null ? $block->escapeHtml(__('Not available')) : $block->escapeHtml((string)$keyPercent . '%') ?></strong>
+                <small><?= $block->escapeHtml(number_format((int)$status['cached_keys'])) ?> / <?= $block->escapeHtml(number_format((int)$status['maximum_keys'])) ?></small>
+                <?php if ($keyPercent !== null): ?><progress max="100" value="<?= $block->escapeHtmlAttr((string)$keyPercent) ?>"></progress><?php endif; ?>
+            </div>
+            <div class="mdoq-opcache-metric">
+                <span><?= $block->escapeHtml(__('JIT')) ?></span>
+                <strong><?= !empty($jit['enabled']) ? $block->escapeHtml(__('Enabled')) : $block->escapeHtml(__('Disabled')) ?></strong>
+                <small><?= $jitPercent === null ? $block->escapeHtml(__('No JIT buffer')) : $block->escapeHtml($block->formatBytes($jitUsed) . ' / ' . $block->formatBytes($jitSize)) ?></small>
+                <?php if ($jitPercent !== null): ?><progress max="100" value="<?= $block->escapeHtmlAttr((string)$jitPercent) ?>"></progress><?php endif; ?>
+            </div>
+        </div>
+
+        <div class="mdoq-opcache-nav" role="tablist" aria-label="<?= $block->escapeHtmlAttr(__('OPcache views')) ?>">
+            <button type="button" role="tab" aria-selected="true" aria-controls="mdoq-opcache-section-overview" data-opcache-view><?= $block->escapeHtml(__('Overview')) ?></button>
+            <button type="button" role="tab" aria-selected="false" aria-controls="mdoq-opcache-section-scripts" data-opcache-view><?= $block->escapeHtml(__('Cached scripts')) ?></button>
+            <button type="button" role="tab" aria-selected="false" aria-controls="mdoq-opcache-section-directives" data-opcache-view><?= $block->escapeHtml(__('Directives')) ?></button>
+            <button type="button" role="tab" aria-selected="false" aria-controls="mdoq-opcache-section-blacklist" data-opcache-view><?= $block->escapeHtml(__('Blacklist')) ?></button>
+            <button type="button" role="tab" aria-selected="false" aria-controls="mdoq-opcache-section-preloaded" data-opcache-view><?= $block->escapeHtml(__('Preloaded')) ?></button>
+        </div>
+
+        <section id="mdoq-opcache-section-overview" class="mdoq-opcache-section" role="tabpanel" data-opcache-section>
+            <div class="mdoq-opcache-detail-grid">
+                <div>
+                    <h3><?= $block->escapeHtml(__('Memory usage')) ?></h3>
+                    <div class="mdoq-php-table-wrap"><table class="admin__table-primary"><tbody>
+                        <tr><th><?= $block->escapeHtml(__('Used')) ?></th><td><?= $block->escapeHtml($block->formatBytes($status['used_memory'])) ?></td></tr>
+                        <tr><th><?= $block->escapeHtml(__('Free')) ?></th><td><?= $block->escapeHtml($block->formatBytes($status['free_memory'])) ?></td></tr>
+                        <tr><th><?= $block->escapeHtml(__('Wasted')) ?></th><td><?= $block->escapeHtml($block->formatBytes($status['wasted_memory'])) ?></td></tr>
+                        <tr><th><?= $block->escapeHtml(__('Interned strings used')) ?></th><td><?= $block->escapeHtml($block->formatBytes($status['interned_strings']['used_memory'] ?? null)) ?></td></tr>
+                        <tr><th><?= $block->escapeHtml(__('Interned strings free')) ?></th><td><?= $block->escapeHtml($block->formatBytes($status['interned_strings']['free_memory'] ?? null)) ?></td></tr>
+                        <tr><th><?= $block->escapeHtml(__('Interned strings count')) ?></th><td><?= $block->escapeHtml(number_format((int)($status['interned_strings']['number_of_strings'] ?? 0))) ?></td></tr>
+                    </tbody></table></div>
+                </div>
+                <div>
+                    <h3><?= $block->escapeHtml(__('Cache statistics')) ?></h3>
+                    <div class="mdoq-php-table-wrap"><table class="admin__table-primary"><tbody>
+                        <tr><th><?= $block->escapeHtml(__('Cache start')) ?></th><td><?= isset($status['start_time']) ? $block->escapeHtml(date('Y-m-d H:i:s', (int)$status['start_time'])) : $block->escapeHtml(__('Not available')) ?></td></tr>
+                        <tr><th><?= $block->escapeHtml(__('Last restart')) ?></th><td><?= !empty($status['last_restart_time']) ? $block->escapeHtml(date('Y-m-d H:i:s', (int)$status['last_restart_time'])) : $block->escapeHtml(__('Never')) ?></td></tr>
+                        <tr><th><?= $block->escapeHtml(__('Cache full')) ?></th><td><?= !empty($status['cache_full']) ? $block->escapeHtml(__('Yes')) : $block->escapeHtml(__('No')) ?></td></tr>
+                        <tr><th><?= $block->escapeHtml(__('Restart pending')) ?></th><td><?= !empty($status['restart_pending']) ? $block->escapeHtml(__('Yes')) : $block->escapeHtml(__('No')) ?></td></tr>
+                        <tr><th><?= $block->escapeHtml(__('JIT buffer free')) ?></th><td><?= $jitPercent === null ? $block->escapeHtml(__('Not available')) : $block->escapeHtml($block->formatBytes($jit['buffer_free'] ?? 0)) ?></td></tr>
+                    </tbody></table></div>
+                    <h3><?= $block->escapeHtml(__('Available OPcache functions')) ?></h3>
+                    <ul class="mdoq-opcache-list">
+                        <?php foreach ($data['functions'] as $function): ?><li><code><?= $block->escapeHtml($function) ?></code></li><?php endforeach; ?>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="mdoq-opcache-section-scripts" class="mdoq-opcache-section" role="tabpanel" data-opcache-section hidden>
+            <h3><?= $block->escapeHtml(__('Cached scripts')) ?></h3>
+            <input class="admin__control-text mdoq-opcache-filter" type="search" placeholder="<?= $block->escapeHtmlAttr(__('Filter script paths')) ?>" aria-label="<?= $block->escapeHtmlAttr(__('Filter script paths')) ?>" data-opcache-filter>
+            <p class="mdoq-opcache-muted" data-opcache-script-count></p>
+            <div class="mdoq-php-table-wrap"><table class="admin__table-primary">
+                <thead><tr><th><?= $block->escapeHtml(__('Script')) ?></th><th><?= $block->escapeHtml(__('Hits')) ?></th><th><?= $block->escapeHtml(__('Memory')) ?></th><th><?= $block->escapeHtml(__('Last used')) ?></th><th><?= $block->escapeHtml(__('Last modified')) ?></th></tr></thead>
+                <tbody data-opcache-script-rows data-visible-limit="<?= $pageSize ?>">
+                    <?php foreach ($scripts as $index => $script): ?>
+                        <?php $path = (string)($script['full_path'] ?? ''); ?>
+                        <tr<?= $index >= $pageSize ? ' hidden' : '' ?> data-path="<?= $block->escapeHtmlAttr(strtolower($path)) ?>">
+                            <td class="mdoq-opcache-file-path"><code><?= $block->escapeHtml($path) ?></code></td>
+                            <td><?= $block->escapeHtml(number_format((int)($script['hits'] ?? 0))) ?></td>
+                            <td><?= $block->escapeHtml($block->formatBytes($script['memory_consumption'] ?? null)) ?></td>
+                            <td><?= $block->escapeHtml($script['last_used'] ?? __('Not available')) ?></td>
+                            <td><?= !empty($script['timestamp']) ? $block->escapeHtml(date('Y-m-d H:i:s', (int)$script['timestamp'])) : $block->escapeHtml(__('Not available')) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table></div>
+            <p class="mdoq-opcache-muted" data-opcache-no-matches hidden><?= $block->escapeHtml(__('No cached scripts match this filter.')) ?></p>
+            <?php if (count($scripts) > $pageSize): ?><button class="action-secondary" type="button" data-opcache-show-more><?= $block->escapeHtml(__('Show more scripts')) ?></button><?php endif; ?>
+        </section>
+
+        <section id="mdoq-opcache-section-directives" class="mdoq-opcache-section" role="tabpanel" data-opcache-section hidden>
+            <h3><?= $block->escapeHtml(__('OPcache directives')) ?></h3>
+            <div class="mdoq-php-table-wrap"><table class="admin__table-primary">
+                <thead><tr><th><?= $block->escapeHtml(__('Directive')) ?></th><th><?= $block->escapeHtml(__('Value')) ?></th></tr></thead>
+                <tbody>
+                    <?php foreach ($data['directives'] as $name => $value): ?>
+                        <?php $directiveValue = is_scalar($value) ? (string)$value : (string)json_encode($value); ?>
+                        <tr><td><code><?= $block->escapeHtml($name) ?></code></td><td><?= $block->escapeHtml($directiveValue) ?></td></tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table></div>
+        </section>
+
+        <section id="mdoq-opcache-section-blacklist" class="mdoq-opcache-section" role="tabpanel" data-opcache-section hidden>
+            <h3><?= $block->escapeHtml(__('Blacklisted paths')) ?></h3>
+            <?php if ($data['blacklist']): ?>
+                <ul class="mdoq-opcache-list"><?php foreach ($data['blacklist'] as $path): ?><li><code><?= $block->escapeHtml($path) ?></code></li><?php endforeach; ?></ul>
+            <?php else: ?>
+                <p class="mdoq-opcache-muted"><?= $block->escapeHtml(__('No readable blacklist entries are configured.')) ?></p>
+            <?php endif; ?>
+        </section>
+
+        <section id="mdoq-opcache-section-preloaded" class="mdoq-opcache-section" role="tabpanel" data-opcache-section hidden>
+            <h3><?= $block->escapeHtml(__('Preloaded scripts')) ?></h3>
+            <?php if ($data['preloaded']): ?>
+                <ul class="mdoq-opcache-list"><?php foreach ($data['preloaded'] as $path): ?><li><code><?= $block->escapeHtml($path) ?></code></li><?php endforeach; ?></ul>
+            <?php else: ?>
+                <p class="mdoq-opcache-muted"><?= $block->escapeHtml(__('No preloaded scripts are reported by this PHP runtime.')) ?></p>
+            <?php endif; ?>
+        </section>
+    <?php endif; ?>
+</div>

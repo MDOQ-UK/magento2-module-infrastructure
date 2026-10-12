@@ -1,0 +1,319 @@
+<div id="mdoq-varnish-app"
+     data-stats-url="<?= $block->escapeUrl($block->getUrl('mdoq_infrastructure/varnish/proxy', ['endpoint' => 'stats'])) ?>"
+     data-config-url="<?= $block->escapeUrl($block->getUrl('mdoq_infrastructure/varnish/proxy', ['endpoint' => 'config'])) ?>"
+     data-env-url="<?= $block->escapeUrl($block->getUrl('mdoq_infrastructure/varnish/proxy', ['endpoint' => 'env'])) ?>"
+     data-vcl-url="<?= $block->escapeUrl($block->getUrl('mdoq_infrastructure/varnish/proxy', ['endpoint' => 'vcl'])) ?>"
+     data-upload-url="<?= $block->escapeUrl($block->getUrl('mdoq_infrastructure/varnish/upload')) ?>">
+    <h1 class="page-title"><?= $block->escapeHtml(__('Varnish Manager')) ?></h1>
+
+    <div class="mdoq-varnish-tabs" role="tablist" aria-label="<?= $block->escapeHtmlAttr(__('Varnish manager tabs')) ?>">
+        <button class="mdoq-varnish-tab _active" type="button" role="tab" aria-selected="true" aria-controls="mdoq-stats-panel" data-tab="stats"><?= $block->escapeHtml(__('Stats')) ?></button>
+        <button class="mdoq-varnish-tab" type="button" role="tab" aria-selected="false" aria-controls="mdoq-config-panel" data-tab="config"><?= $block->escapeHtml(__('Configuration')) ?></button>
+        <button class="mdoq-varnish-tab" type="button" role="tab" aria-selected="false" aria-controls="mdoq-vcl-panel" data-tab="vcl"><?= $block->escapeHtml(__('VCL')) ?></button>
+    </div>
+
+    <section id="mdoq-stats-panel" class="mdoq-varnish-panel" role="tabpanel">
+        <div class="mdoq-varnish-toolbar"><button id="mdoq-auto-refresh" class="action-secondary" type="button"><?= $block->escapeHtml(__('Enable auto refresh')) ?></button></div>
+        <p id="mdoq-hit-rate" class="mdoq-hit-rate"><?= $block->escapeHtml(__('Cache hit rate: --')) ?></p>
+        <h2><?= $block->escapeHtml(__('Key stats')) ?></h2>
+        <div class="mdoq-table-wrap"><table class="admin__table-primary">
+            <thead><tr><th><?= $block->escapeHtml(__('Name')) ?></th><th><?= $block->escapeHtml(__('Description')) ?></th><th><?= $block->escapeHtml(__('Value')) ?></th></tr></thead>
+            <tbody id="mdoq-key-stats"><tr><td colspan="3"><?= $block->escapeHtml(__('Loading stats...')) ?></td></tr></tbody>
+        </table></div>
+        <h2><?= $block->escapeHtml(__('All stats')) ?></h2>
+        <div class="mdoq-table-wrap"><table class="admin__table-primary">
+            <thead><tr><th><?= $block->escapeHtml(__('Name')) ?></th><th><?= $block->escapeHtml(__('Description')) ?></th><th><?= $block->escapeHtml(__('Value')) ?></th></tr></thead>
+            <tbody id="mdoq-all-stats"><tr><td colspan="3"><?= $block->escapeHtml(__('Loading stats...')) ?></td></tr></tbody>
+        </table></div>
+    </section>
+
+    <section id="mdoq-config-panel" class="mdoq-varnish-panel" role="tabpanel" hidden>
+        <h2><?= $block->escapeHtml(__('Environment configuration')) ?></h2>
+        <div class="mdoq-table-wrap"><table class="admin__table-primary">
+            <thead><tr><th><?= $block->escapeHtml(__('Key')) ?></th><th><?= $block->escapeHtml(__('Value')) ?></th></tr></thead>
+            <tbody id="mdoq-env-config"><tr><td colspan="2"><?= $block->escapeHtml(__('Loading environment configuration...')) ?></td></tr></tbody>
+        </table></div>
+        <h2><?= $block->escapeHtml(__('Runtime configuration')) ?></h2>
+        <div class="mdoq-table-wrap"><table class="admin__table-primary">
+            <thead><tr>
+                <th><?= $block->escapeHtml(__('Name')) ?></th><th><?= $block->escapeHtml(__('Implemented')) ?></th>
+                <th><?= $block->escapeHtml(__('Value')) ?></th><th><?= $block->escapeHtml(__('Default')) ?></th>
+                <th><?= $block->escapeHtml(__('Minimum')) ?></th><th><?= $block->escapeHtml(__('Maximum')) ?></th>
+                <th><?= $block->escapeHtml(__('Description')) ?></th><th><?= $block->escapeHtml(__('Flags')) ?></th>
+            </tr></thead>
+            <tbody id="mdoq-runtime-config"><tr><td colspan="8"><?= $block->escapeHtml(__('Loading runtime configuration...')) ?></td></tr></tbody>
+        </table></div>
+    </section>
+
+    <section id="mdoq-vcl-panel" class="mdoq-varnish-panel" role="tabpanel" hidden>
+        <h2><?= $block->escapeHtml(__('Upload VCL')) ?></h2>
+        <form id="mdoq-vcl-upload" action="<?= $block->escapeUrl($block->getUrl('mdoq_infrastructure/varnish/upload')) ?>" method="post" enctype="multipart/form-data">
+            <?= $block->getBlockHtml('formkey') ?>
+            <div class="mdoq-upload-row">
+                <input id="mdoq-vcl-file" type="file" name="vcl_file" accept=".vcl" required>
+                <button id="mdoq-vcl-submit" class="action-primary" type="submit"><?= $block->escapeHtml(__('Upload VCL')) ?></button>
+                <?= $block->getChildHtml('vcl_actions') ?>
+            </div>
+        </form>
+        <p id="mdoq-vcl-status" class="message message-notice" aria-live="polite"><?= $block->escapeHtml(__('Select a .vcl file to upload.')) ?></p>
+        <h2><?= $block->escapeHtml(__('Current VCL')) ?></h2>
+        <p id="mdoq-vcl-modified" class="mdoq-vcl-meta"><?= $block->escapeHtml(__('Last modified: --')) ?></p>
+        <pre id="mdoq-vcl-code" class="mdoq-vcl-code"><?= $block->escapeHtml(__('Loading VCL configuration...')) ?></pre>
+    </section>
+</div>
+
+<style>
+    #mdoq-varnish-app .mdoq-varnish-tabs { display: flex; gap: 4px; margin: 0 0 20px; border-bottom: 1px solid #adadad; }
+    #mdoq-varnish-app .mdoq-varnish-tab { padding: 10px 16px; border: 1px solid transparent; background: transparent; cursor: pointer; }
+    #mdoq-varnish-app .mdoq-varnish-tab._active { margin-bottom: -1px; border-color: #adadad; border-bottom-color: #fff; background: #fff; font-weight: 600; }
+    #mdoq-varnish-app .mdoq-varnish-panel[hidden] { display: none; }
+    #mdoq-varnish-app .mdoq-varnish-panel h2 { margin: 24px 0 12px; font-size: 1.8rem; }
+    #mdoq-varnish-app .mdoq-varnish-toolbar { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+    #mdoq-varnish-app .mdoq-hit-rate { display: inline-block; margin: 0 0 18px; padding: 10px 14px; border: 1px solid #adadad; font-weight: 600; }
+    #mdoq-varnish-app .mdoq-table-wrap { max-width: 100%; overflow-x: auto; }
+    #mdoq-varnish-app .mdoq-table-wrap table { min-width: 620px; }
+    #mdoq-varnish-app .mdoq-table-wrap td { overflow-wrap: anywhere; }
+    #mdoq-varnish-app .mdoq-table-wrap tr._warning { background: #fff4e5; }
+    #mdoq-varnish-app .mdoq-upload-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+    #mdoq-varnish-app .mdoq-vcl-meta { color: #666; }
+    #mdoq-varnish-app .mdoq-vcl-code { max-height: 65vh; overflow: auto; padding: 16px; border: 1px solid #adadad; background: #f5f5f5; white-space: pre; }
+    @media (max-width: 767px) { #mdoq-varnish-app .mdoq-varnish-tab { padding: 8px 10px; } }
+</style>
+
+<script>
+(function () {
+    'use strict';
+    const app = document.getElementById('mdoq-varnish-app');
+    const keyStats = ['MGT.uptime', 'MGT.child_start', 'MAIN.cache_hit', 'MAIN.cache_miss', 'MAIN.sess_conn', 'MAIN.threads', 'MAIN.n_object', 'MAIN.n_lru_nuked', 'SMA.s0.g_bytes', 'SMA.s0.g_space'];
+    const byteStats = new Set(['SMA.s0.g_bytes', 'SMA.s0.g_space', 'MAIN.bans_persisted_bytes', 'MAIN.bans_persisted_fragmentation', 'MAIN.s_pipe_hdrbytes', 'MAIN.s_pipe_in', 'MAIN.s_pipe_out', 'MAIN.s_req_bodybytes', 'MAIN.s_req_hdrbytes', 'MAIN.s_resp_bodybytes', 'MAIN.s_resp_hdrbytes', 'MAIN.shm_bytes', 'MAIN.transit_buffered', 'MAIN.transit_stored', 'SMA.Transient.c_bytes', 'SMA.Transient.c_freed', 'SMA.Transient.g_bytes', 'SMA.Transient.g_space', 'SMA.s0.c_bytes', 'SMA.s0.c_freed', 'VBE.boot.default.bereq_bodybytes', 'VBE.boot.default.bereq_hdrbytes', 'VBE.boot.default.beresp_bodybytes', 'VBE.boot.default.beresp_hdrbytes', 'VBE.boot.default.pipe_hdrbytes', 'VBE.boot.default.pipe_in', 'VBE.boot.default.pipe_out']);
+    let autoRefreshTimer = null;
+
+    async function fetchJson(url, options) {
+        const response = await fetch(url, options);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Varnish manager request failed.');
+        return data;
+    }
+
+    function setTableMessage(id, message, columns) {
+        const body = document.getElementById(id);
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = columns;
+        cell.textContent = message;
+        row.appendChild(cell);
+        body.replaceChildren(row);
+    }
+
+    function formatDuration(value) {
+        let seconds = Math.floor(Number(value) || 0);
+        const days = Math.floor(seconds / 86400);
+        seconds %= 86400;
+        const hours = Math.floor(seconds / 3600);
+        seconds %= 3600;
+        const minutes = Math.floor(seconds / 60);
+        seconds %= 60;
+        const parts = [];
+        if (days) parts.push(days + 'd');
+        if (hours || parts.length) parts.push(hours + 'h');
+        if (minutes || parts.length) parts.push(minutes + 'm');
+        parts.push(seconds + 's');
+        return parts.join(' ');
+    }
+
+    function formatValue(value, name) {
+        if (typeof value !== 'number') return value === undefined || value === null ? '\u2014' : String(value);
+        const formatted = value.toLocaleString();
+        if (name === 'MGT.uptime') return formatted + ' (' + formatDuration(value) + ')';
+        if (byteStats.has(name)) {
+            const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+            let size = value;
+            let unit = 0;
+            while (size >= 1024 && unit < units.length - 1) { size /= 1024; unit += 1; }
+            return formatted + ' (' + size.toFixed(size >= 10 || !unit ? 0 : 1) + ' ' + units[unit] + ')';
+        }
+        return formatted;
+    }
+
+    function renderStatRows(metrics, names, id) {
+        const body = document.getElementById(id);
+        if (!names.length) return setTableMessage(id, 'No stats available.', 3);
+        const rows = [];
+        names.forEach(function (name) {
+            const metric = metrics[name] || {};
+            const row = document.createElement('tr');
+            if (name === 'MAIN.n_lru_nuked' && Number(metric.value) > 0) row.classList.add('_warning');
+            [name, metric.description || '\u2014', formatValue(metric.value, name)].forEach(function (value) {
+                const cell = document.createElement('td');
+                cell.textContent = value;
+                row.appendChild(cell);
+            });
+            rows.push(row);
+            if (name === 'MAIN.n_lru_nuked' && Number(metric.value) > 0) {
+                const warning = document.createElement('tr');
+                warning.classList.add('_warning');
+                const cell = document.createElement('td');
+                cell.colSpan = 3;
+                cell.textContent = 'Warning: Varnish may not have enough memory to store all required requests.';
+                warning.appendChild(cell);
+                rows.push(warning);
+            }
+        });
+        body.replaceChildren(...rows);
+    }
+
+    async function loadStats() {
+        try {
+            const data = await fetchJson(app.dataset.statsUrl);
+            const metrics = data.counters || {};
+            const hits = Number(metrics['MAIN.cache_hit'] && metrics['MAIN.cache_hit'].value);
+            const misses = Number(metrics['MAIN.cache_miss'] && metrics['MAIN.cache_miss'].value);
+            document.getElementById('mdoq-hit-rate').textContent = Number.isFinite(hits) && Number.isFinite(misses) && hits + misses > 0
+                ? 'Cache hit rate: ' + (100 * hits / (hits + misses)).toFixed(2) + '%' : 'Cache hit rate: --';
+            renderStatRows(metrics, keyStats.filter(function (name) { return metrics[name]; }), 'mdoq-key-stats');
+            renderStatRows(metrics, Object.keys(metrics).filter(function (name) { return !keyStats.includes(name); }).sort(), 'mdoq-all-stats');
+        } catch (error) {
+            setTableMessage('mdoq-key-stats', error.message || 'Failed to load stats.', 3);
+            setTableMessage('mdoq-all-stats', error.message || 'Failed to load stats.', 3);
+        }
+    }
+
+    function normalizeValue(value) {
+        if (value === null || value === undefined) return '';
+        if (typeof value === 'boolean') return value ? 'on' : 'off';
+        if (typeof value === 'object') return JSON.stringify(value);
+        const text = String(value).trim();
+        const match = text.match(/^([-+]?\d*\.?\d+)([kmgt]?)(?:b)?$/i);
+        if (match) {
+            const power = { '': 0, k: 1, m: 2, g: 3, t: 4 }[(match[2] || '').toLowerCase()] || 0;
+            return String(Number(match[1]) * Math.pow(1024, power));
+        }
+        const number = Number(text);
+        return text !== '' && !Number.isNaN(number) ? String(number) : text.toLowerCase();
+    }
+
+    function renderRows(id, rows, columns, isCustomized) {
+        const body = document.getElementById(id);
+        if (!rows.length) return setTableMessage(id, 'No configuration available.', columns);
+        const elements = rows.map(function (rowData) {
+            const row = document.createElement('tr');
+            if (isCustomized && isCustomized(rowData)) row.classList.add('_warning');
+            rowData.values.forEach(function (value) {
+                const cell = document.createElement('td');
+                cell.textContent = value === null || value === undefined || value === '' ? '\u2014' : String(value).replace(/\n/g, ' ');
+                row.appendChild(cell);
+            });
+            return row;
+        });
+        body.replaceChildren(...elements);
+    }
+
+    async function loadConfig() {
+        try {
+            const [environment, config] = await Promise.all([fetchJson(app.dataset.envUrl), fetchJson(app.dataset.configUrl)]);
+            renderRows('mdoq-env-config', Array.isArray(environment) ? environment.map(function (item) { return { values: [item.key, item.value] }; }) : [], 2);
+            const rows = Array.isArray(config) ? config.slice(3).filter(function (item) {
+                return item && typeof item === 'object' && item.name !== undefined;
+            }).map(function (item) {
+                return { data: item, values: [item.name, item.implemented, item.value, item.default, item.minimum, item.maximum, item.description, Array.isArray(item.flags) ? item.flags.join(', ') : '\u2014'] };
+            }) : [];
+            rows.sort(function (left, right) {
+                const leftChanged = normalizeValue(left.data.value) !== normalizeValue(left.data.default);
+                const rightChanged = normalizeValue(right.data.value) !== normalizeValue(right.data.default);
+                return Number(rightChanged) - Number(leftChanged);
+            });
+            renderRows('mdoq-runtime-config', rows, 8, function (row) {
+                return row.data.value !== undefined && row.data.default !== undefined && normalizeValue(row.data.value) !== normalizeValue(row.data.default);
+            });
+        } catch (error) {
+            setTableMessage('mdoq-env-config', error.message || 'Failed to load environment configuration.', 2);
+            setTableMessage('mdoq-runtime-config', error.message || 'Failed to load runtime configuration.', 8);
+        }
+    }
+
+    function renderVcl(data) {
+        document.getElementById('mdoq-vcl-code').textContent = data.vcl && String(data.vcl).trim() ? String(data.vcl) : 'No VCL configuration available.';
+        const modified = data.lastModified;
+        const date = modified ? new Date(modified) : null;
+        document.getElementById('mdoq-vcl-modified').textContent = 'Last modified: ' + (modified ? (date && !Number.isNaN(date.getTime()) ? date.toLocaleString() : modified) : '--');
+    }
+
+    async function loadVcl() {
+        try { renderVcl(await fetchJson(app.dataset.vclUrl)); }
+        catch (error) {
+            document.getElementById('mdoq-vcl-code').textContent = error.message || 'Failed to load VCL configuration.';
+            document.getElementById('mdoq-vcl-modified').textContent = 'Last modified: --';
+        }
+    }
+
+    function selectTab(name) {
+        document.querySelectorAll('#mdoq-varnish-app .mdoq-varnish-tab').forEach(function (button) {
+            const active = button.dataset.tab === name;
+            button.classList.toggle('_active', active);
+            button.setAttribute('aria-selected', String(active));
+        });
+        document.querySelectorAll('#mdoq-varnish-app .mdoq-varnish-panel').forEach(function (panel) {
+            panel.hidden = panel.id !== 'mdoq-' + name + '-panel';
+        });
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', name);
+        window.history.replaceState({}, '', url);
+        if (name === 'stats') loadStats();
+        if (name === 'config') loadConfig();
+        if (name === 'vcl') loadVcl();
+    }
+
+    document.querySelectorAll('#mdoq-varnish-app .mdoq-varnish-tab').forEach(function (button) {
+        button.addEventListener('click', function () { selectTab(button.dataset.tab); });
+    });
+
+    const refresh = document.getElementById('mdoq-auto-refresh');
+    refresh.addEventListener('click', function () {
+        if (autoRefreshTimer) {
+            window.clearInterval(autoRefreshTimer);
+            autoRefreshTimer = null;
+            refresh.textContent = 'Enable auto refresh';
+        } else {
+            refresh.textContent = 'Disable auto refresh';
+            autoRefreshTimer = window.setInterval(loadStats, 5000);
+            loadStats();
+        }
+    });
+
+    const form = document.getElementById('mdoq-vcl-upload');
+    const status = document.getElementById('mdoq-vcl-status');
+    const submit = document.getElementById('mdoq-vcl-submit');
+    form.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const file = document.getElementById('mdoq-vcl-file').files[0];
+        if (!file || !file.name.toLowerCase().endsWith('.vcl')) {
+            status.textContent = 'Select a .vcl file before uploading.';
+            status.className = 'message message-error';
+            return;
+        }
+        submit.disabled = true;
+        status.textContent = 'Uploading VCL...';
+        status.className = 'message message-notice';
+        try {
+            const result = await fetchJson(app.dataset.uploadUrl, { method: 'POST', body: new FormData(form) });
+            status.textContent = result.message || 'VCL uploaded successfully.';
+            status.className = 'message message-success';
+            form.reset();
+            await loadVcl();
+        } catch (error) {
+            status.textContent = error.message || 'Unable to upload VCL file.';
+            status.className = 'message message-error';
+        } finally { submit.disabled = false; }
+    });
+
+    // Hooks for other modules' actions: report progress and ask for the VCL view to refresh.
+    document.addEventListener('mdoq-varnish:status', function (event) {
+        status.textContent = event.detail.message;
+        status.className = 'message message-' + (event.detail.type || 'notice');
+    });
+    document.addEventListener('mdoq-varnish:vcl-updated', loadVcl);
+
+    const tab = new URLSearchParams(window.location.search).get('tab');
+    selectTab(['stats', 'config', 'vcl'].includes(tab) ? tab : 'stats');
+}());
+</script>

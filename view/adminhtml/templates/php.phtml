@@ -1,0 +1,247 @@
+<?php
+/** @var \MDOQ\Infrastructure\Block\Adminhtml\PhpDiagnostics $block */
+?>
+<div id="mdoq-php-diagnostics">
+    <div class="mdoq-php-heading">
+        <div>
+            <h1 class="page-title"><?= $block->escapeHtml(__('PHP Diagnostics')) ?></h1>
+            <p><?= $block->escapeHtml(__('Runtime configuration and health for this Magento application.')) ?></p>
+        </div>
+        <span class="mdoq-php-version">PHP <?= $block->escapeHtml(PHP_VERSION) ?></span>
+    </div>
+
+    <div class="mdoq-php-tabs" role="tablist" aria-label="<?= $block->escapeHtmlAttr(__('PHP diagnostics')) ?>">
+        <button id="mdoq-php-tab-info" class="mdoq-php-tab _active" type="button" role="tab" aria-selected="true" aria-controls="mdoq-php-panel-info" tabindex="0"><?= $block->escapeHtml(__('PHP Info')) ?></button>
+        <button id="mdoq-php-tab-opcache" class="mdoq-php-tab" type="button" role="tab" aria-selected="false" aria-controls="mdoq-php-panel-opcache" tabindex="-1"><?= $block->escapeHtml(__('OPcache')) ?></button>
+        <button id="mdoq-php-tab-status" class="mdoq-php-tab" type="button" role="tab" aria-selected="false" aria-controls="mdoq-php-panel-status" tabindex="-1"><?= $block->escapeHtml(__('Status')) ?></button>
+    </div>
+
+    <section id="mdoq-php-panel-info" class="mdoq-php-panel" role="tabpanel" aria-labelledby="mdoq-php-tab-info" tabindex="0">
+        <iframe class="mdoq-php-info-frame" title="<?= $block->escapeHtmlAttr(__('PHP Info')) ?>" src="<?= $block->escapeUrl($block->getUrl('mdoq_infrastructure/php/info')) ?>" loading="eager" referrerpolicy="no-referrer" sandbox></iframe>
+    </section>
+
+    <section id="mdoq-php-panel-opcache" class="mdoq-php-panel" role="tabpanel" aria-labelledby="mdoq-php-tab-opcache" tabindex="0" hidden>
+        <div id="mdoq-opcache-content" data-url="<?= $block->escapeUrl($block->getUrl('mdoq_infrastructure/php/opcache')) ?>">
+            <div class="message message-notice"><div><?= $block->escapeHtml(__('Open this tab to load live OPcache data.')) ?></div></div>
+        </div>
+    </section>
+
+    <section id="mdoq-php-panel-status" class="mdoq-php-panel" role="tabpanel" aria-labelledby="mdoq-php-tab-status" tabindex="0" hidden>
+        <div id="mdoq-fpm-content" data-url="<?= $block->escapeUrl($block->getUrl('mdoq_infrastructure/php/status')) ?>">
+            <div class="message message-notice"><div><?= $block->escapeHtml(__('Open this tab to load PHP-FPM status.')) ?></div></div>
+        </div>
+    </section>
+</div>
+
+<style>
+    #mdoq-php-diagnostics .mdoq-php-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+    #mdoq-php-diagnostics .mdoq-php-heading p { margin: -10px 0 16px; color: #666; }
+    #mdoq-php-diagnostics .mdoq-php-version { padding: 8px 12px; border: 1px solid #adadad; background: #f5f5f5; font-weight: 600; }
+    #mdoq-php-diagnostics .mdoq-php-tabs { display: flex; gap: 4px; margin: 8px 0 20px; border-bottom: 1px solid #adadad; }
+    #mdoq-php-diagnostics .mdoq-php-tab { padding: 10px 16px; border: 1px solid transparent; background: transparent; cursor: pointer; }
+    #mdoq-php-diagnostics .mdoq-php-tab._active { margin-bottom: -1px; border-color: #adadad; border-bottom-color: #fff; background: #fff; font-weight: 600; }
+    #mdoq-php-diagnostics .mdoq-php-tab:focus-visible { outline: 2px solid #007dbd; outline-offset: -2px; }
+    #mdoq-php-diagnostics .mdoq-php-panel[hidden] { display: none; }
+    #mdoq-php-diagnostics .mdoq-php-panel h2 { margin: 24px 0 12px; font-size: 1.8rem; }
+    #mdoq-php-diagnostics .mdoq-php-panel h2:first-child { margin-top: 0; }
+    #mdoq-php-diagnostics .mdoq-php-panel h2 small { color: #666; font-size: 1.4rem; font-weight: normal; }
+    #mdoq-php-diagnostics .mdoq-php-info-frame { display: block; width: 100%; height: 75vh; min-height: 600px; border: 1px solid #adadad; background: #fff; }
+    #mdoq-php-diagnostics .mdoq-php-note { color: #666; }
+    #mdoq-php-diagnostics .mdoq-php-table-wrap { max-width: 100%; overflow-x: auto; }
+    #mdoq-php-diagnostics .mdoq-php-table-wrap table { min-width: 440px; }
+    #mdoq-php-diagnostics .mdoq-php-table-wrap td { overflow-wrap: anywhere; }
+    #mdoq-opcache-dashboard .mdoq-opcache-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+    #mdoq-opcache-dashboard .mdoq-opcache-toolbar p { margin: 0; color: #666; }
+    #mdoq-opcache-dashboard .mdoq-opcache-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: 12px; margin: 16px 0 22px; }
+    #mdoq-opcache-dashboard .mdoq-opcache-metric { min-width: 0; padding: 14px; border: 1px solid #cbd3d8; background: #fff; }
+    #mdoq-opcache-dashboard .mdoq-opcache-metric span { display: block; color: #5f6b73; }
+    #mdoq-opcache-dashboard .mdoq-opcache-metric strong { display: block; margin: 5px 0; font-size: 2rem; overflow-wrap: anywhere; }
+    #mdoq-opcache-dashboard .mdoq-opcache-metric progress { width: 100%; height: 8px; }
+    #mdoq-opcache-dashboard .mdoq-opcache-nav { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid #adadad; }
+    #mdoq-opcache-dashboard .mdoq-opcache-nav button { padding: 9px 12px; border: 1px solid transparent; background: transparent; cursor: pointer; }
+    #mdoq-opcache-dashboard .mdoq-opcache-nav button[aria-selected="true"] { margin-bottom: -1px; border-color: #adadad; border-bottom-color: #fff; background: #fff; font-weight: 600; }
+    #mdoq-opcache-dashboard .mdoq-opcache-section[hidden] { display: none; }
+    #mdoq-opcache-dashboard .mdoq-opcache-section h3 { margin: 20px 0 10px; font-size: 1.6rem; }
+    #mdoq-opcache-dashboard .mdoq-opcache-detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 20px; }
+    #mdoq-opcache-dashboard .mdoq-opcache-filter { max-width: 560px; margin-bottom: 12px; }
+    #mdoq-opcache-dashboard .mdoq-opcache-file-path { min-width: 380px; overflow-wrap: anywhere; }
+    #mdoq-opcache-dashboard [data-opcache-script-rows] tr[hidden] { display: none; }
+    #mdoq-opcache-dashboard .mdoq-opcache-list { margin: 0; padding-left: 20px; overflow-wrap: anywhere; }
+    #mdoq-opcache-dashboard .mdoq-opcache-muted { color: #666; }
+    #mdoq-fpm-status .mdoq-fpm-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+    #mdoq-fpm-status .mdoq-fpm-toolbar p { margin: 0; color: #666; }
+    #mdoq-fpm-status .mdoq-fpm-status-list { margin: 0; border-top: 1px solid #e3e3e3; }
+    #mdoq-fpm-status .mdoq-fpm-status-list > div { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(0, 3fr); gap: 16px; padding: 10px 12px; border-bottom: 1px solid #e3e3e3; }
+    #mdoq-fpm-status .mdoq-fpm-status-list dt { font-weight: 600; overflow-wrap: anywhere; }
+    #mdoq-fpm-status .mdoq-fpm-status-list dd { margin: 0; overflow-wrap: anywhere; }
+    #mdoq-fpm-status .mdoq-fpm-nested { margin: 0; border-left: 2px solid #d6dde2; }
+    #mdoq-fpm-status .mdoq-fpm-nested > div { display: grid; grid-template-columns: minmax(140px, 1fr) minmax(0, 3fr); gap: 12px; padding: 6px 10px; }
+    #mdoq-fpm-status .mdoq-fpm-nested dt { font-weight: 600; }
+    #mdoq-fpm-status .mdoq-fpm-nested dd { margin: 0; overflow-wrap: anywhere; }
+    #mdoq-fpm-status .mdoq-fpm-null { color: #666; font-style: italic; }
+    @media (max-width: 767px) { #mdoq-php-diagnostics .mdoq-php-tab { padding: 8px 10px; } }
+</style>
+
+<script>
+(function () {
+    'use strict';
+    const root = document.getElementById('mdoq-php-diagnostics');
+    const tabs = Array.from(root.querySelectorAll('[role="tab"]'));
+    const panels = Array.from(root.querySelectorAll('[role="tabpanel"]'));
+    const opcacheContent = document.getElementById('mdoq-opcache-content');
+    const fpmContent = document.getElementById('mdoq-fpm-content');
+    let opcacheLoaded = false;
+    let opcacheLoading = false;
+    let fpmLoaded = false;
+    let fpmLoading = false;
+
+    async function loadOpcache(forceRefresh) {
+        if (opcacheLoading || (opcacheLoaded && !forceRefresh)) return;
+        opcacheLoading = true;
+        if (!opcacheLoaded) opcacheContent.innerHTML = '<div class="message message-notice"><div>Loading OPcache data...</div></div>';
+        try {
+            const response = await fetch(opcacheContent.dataset.url, {
+                cache: 'no-store',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (!response.ok) throw new Error('Unable to load OPcache data.');
+            opcacheContent.innerHTML = await response.text();
+            opcacheLoaded = true;
+            updateCachedScriptList('');
+        } catch (error) {
+            opcacheLoaded = false;
+            const message = document.createElement('div');
+            message.className = 'message message-error';
+            const text = document.createElement('div');
+            text.textContent = error.message || 'Unable to load OPcache data.';
+            message.appendChild(text);
+            opcacheContent.replaceChildren(message);
+        } finally {
+            opcacheLoading = false;
+        }
+    }
+
+    async function loadFpmStatus(forceRefresh) {
+        if (fpmLoading || (fpmLoaded && !forceRefresh)) return;
+        fpmLoading = true;
+        if (!fpmLoaded) fpmContent.innerHTML = '<div class="message message-notice"><div>Loading PHP-FPM status...</div></div>';
+        try {
+            const response = await fetch(fpmContent.dataset.url, {
+                cache: 'no-store',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (!response.ok) throw new Error('Unable to load PHP-FPM status.');
+            fpmContent.innerHTML = await response.text();
+            fpmLoaded = true;
+        } catch (error) {
+            fpmLoaded = false;
+            const message = document.createElement('div');
+            message.className = 'message message-error';
+            const text = document.createElement('div');
+            text.textContent = error.message || 'Unable to load PHP-FPM status.';
+            message.appendChild(text);
+            fpmContent.replaceChildren(message);
+        } finally {
+            fpmLoading = false;
+        }
+    }
+
+    function updateCachedScriptList(searchTerm) {
+        const rows = Array.from(opcacheContent.querySelectorAll('[data-opcache-script-rows] tr'));
+        if (!rows.length) {
+            const count = opcacheContent.querySelector('[data-opcache-script-count]');
+            if (count) count.textContent = 'Showing 0 of 0 matching scripts';
+            const empty = opcacheContent.querySelector('[data-opcache-no-matches]');
+            if (empty) empty.hidden = false;
+            return;
+        }
+        const limit = Number(rows[0].parentElement.dataset.visibleLimit || 200);
+        const query = searchTerm.trim().toLowerCase();
+        let matching = 0;
+        let visible = 0;
+        rows.forEach(function (row) {
+            const matches = (row.dataset.path || '').includes(query);
+            if (!matches) {
+                row.hidden = true;
+                return;
+            }
+            matching += 1;
+            row.hidden = visible >= limit;
+            if (!row.hidden) visible += 1;
+        });
+        const count = opcacheContent.querySelector('[data-opcache-script-count]');
+        if (count) count.textContent = 'Showing ' + visible.toLocaleString() + ' of ' + matching.toLocaleString() + ' matching scripts';
+        const more = opcacheContent.querySelector('[data-opcache-show-more]');
+        if (more) more.hidden = visible >= matching;
+        const empty = opcacheContent.querySelector('[data-opcache-no-matches]');
+        if (empty) empty.hidden = matching > 0;
+    }
+
+    function activateTab(tab, moveFocus) {
+        tabs.forEach(function (item) {
+            const selected = item === tab;
+            item.classList.toggle('_active', selected);
+            item.setAttribute('aria-selected', selected ? 'true' : 'false');
+            item.tabIndex = selected ? 0 : -1;
+        });
+        panels.forEach(function (panel) {
+            panel.hidden = panel.id !== tab.getAttribute('aria-controls');
+        });
+        if (tab.id === 'mdoq-php-tab-opcache') loadOpcache(false);
+        if (tab.id === 'mdoq-php-tab-status') loadFpmStatus(false);
+        if (moveFocus) tab.focus();
+    }
+
+    root.addEventListener('click', function (event) {
+        const fpmRefresh = event.target.closest('[data-fpm-refresh]');
+        if (fpmRefresh) {
+            loadFpmStatus(true);
+            return;
+        }
+        const refresh = event.target.closest('[data-opcache-refresh]');
+        if (refresh) {
+            loadOpcache(true);
+            return;
+        }
+        const viewTab = event.target.closest('[data-opcache-view]');
+        if (viewTab) {
+            const dashboard = viewTab.closest('#mdoq-opcache-dashboard');
+            dashboard.querySelectorAll('[data-opcache-view]').forEach(function (item) {
+                item.setAttribute('aria-selected', item === viewTab ? 'true' : 'false');
+            });
+            dashboard.querySelectorAll('[data-opcache-section]').forEach(function (section) {
+                section.hidden = section.id !== viewTab.getAttribute('aria-controls');
+            });
+            return;
+        }
+        if (event.target.closest('[data-opcache-show-more]')) {
+            const rows = opcacheContent.querySelector('[data-opcache-script-rows]');
+            rows.dataset.visibleLimit = String(Number(rows.dataset.visibleLimit || 200) + 200);
+            const filter = opcacheContent.querySelector('[data-opcache-filter]');
+            updateCachedScriptList(filter ? filter.value : '');
+        }
+    });
+
+    root.addEventListener('input', function (event) {
+        if (event.target.matches('[data-opcache-filter]')) {
+            const rows = opcacheContent.querySelector('[data-opcache-script-rows]');
+            if (rows) rows.dataset.visibleLimit = '200';
+            updateCachedScriptList(event.target.value);
+        }
+    });
+
+    tabs.forEach(function (tab, index) {
+        tab.addEventListener('click', function () { activateTab(tab, false); });
+        tab.addEventListener('keydown', function (event) {
+            let nextIndex = index;
+            if (event.key === 'ArrowRight') nextIndex = (index + 1) % tabs.length;
+            else if (event.key === 'ArrowLeft') nextIndex = (index + tabs.length - 1) % tabs.length;
+            else if (event.key === 'Home') nextIndex = 0;
+            else if (event.key === 'End') nextIndex = tabs.length - 1;
+            else return;
+            event.preventDefault();
+            activateTab(tabs[nextIndex], true);
+        });
+    });
+}());
+</script>
