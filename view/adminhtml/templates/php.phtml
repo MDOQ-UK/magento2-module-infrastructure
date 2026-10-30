@@ -121,6 +121,24 @@
         }
     }
 
+    async function flushOpcache(script) {
+        const dashboard = opcacheContent.querySelector('#mdoq-opcache-dashboard');
+        const body = new URLSearchParams({ form_key: dashboard.dataset.formKey });
+        if (script) body.set('script', script);
+        try {
+            const response = await fetch(dashboard.dataset.flushUrl, {
+                method: 'POST',
+                body: body,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const result = await response.json();
+            if (!result.success) window.alert(result.message || 'Request failed.');
+        } catch (error) {
+            window.alert('Request failed.');
+        }
+        loadOpcache(true);
+    }
+
     async function loadFpmStatus(forceRefresh) {
         if (fpmLoading || (fpmLoaded && !forceRefresh)) return;
         fpmLoading = true;
@@ -201,6 +219,15 @@
         const refresh = event.target.closest('[data-opcache-refresh]');
         if (refresh) {
             loadOpcache(true);
+            return;
+        }
+        if (event.target.closest('[data-opcache-flush-all]')) {
+            if (window.confirm('Flush the entire OPcache?')) flushOpcache('');
+            return;
+        }
+        const clearScript = event.target.closest('[data-opcache-clear-script]');
+        if (clearScript) {
+            flushOpcache(clearScript.dataset.opcacheClearScript);
             return;
         }
         const viewTab = event.target.closest('[data-opcache-view]');
