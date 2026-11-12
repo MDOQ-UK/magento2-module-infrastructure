@@ -41,3 +41,44 @@ public function updateVarnish(string $vclContent): array
 ```
 
 The service uploads the source as `vcl_file` to the configured Varnish manager and returns its decoded JSON response. It throws `RuntimeException` if the upload fails or is rejected. It is an internal PHP API; it does not expose a REST endpoint.
+
+## Module VCL snippets
+
+Modules that need their own VCL register a snippet instead of asking for the whole file to be edited by hand.
+`updateVcl()` inserts every registered snippet before uploading, so the admin **Upload VCL** form, the CLI and
+other modules all produce the same result.
+
+1. Implement `MDOQ\Infrastructure\Api\VclSnippetProviderInterface`:
+   - `getName()`: a stable id used in the markers.
+   - `getInsertBefore()`: the subroutine to place the snippet above (for example `vcl_deliver`), or `null` to
+     append. Varnish runs same-named subroutines in source order.
+   - `getVcl()`: the VCL itself, or `''` to leave it out.
+2. Register it in your module's `di.xml`:
+
+```xml
+<type name="MDOQ\Infrastructure\Model\Vcl\SnippetComposer">
+    <arguments>
+        <argument name="providers" xsi:type="array">
+            <item name="my_module" xsi:type="object">Vendor\Module\Model\VclSnippet</item>
+        </argument>
+    </arguments>
+</type>
+```
+
+Each snippet is wrapped in `# >>> mdoq-snippet:<name>` / `# <<< mdoq-snippet:<name>` markers. All marked blocks
+are removed and inserted again on every upload, so uploading the live VCL never duplicates a snippet, and a
+snippet whose provider returns `''` is removed.
+
+After enabling a module or changing a setting that affects its snippet, apply it to the live VCL:
+
+```bash
+bin/magento mdoq:varnish:vcl:apply --dry-run   # print the result without uploading
+bin/magento mdoq:varnish:vcl:apply
+```
+
+### zero1/module-cloudflare-cache
+
+When `Zero1_CloudflareCache` is installed, enabled, and purging is on for at least one website, its Cache-Tag
+bridge (the output of `bin/magento zero1:cloudflare:vcl`, using the configured tag prefix) is inserted above
+Magento's `vcl_deliver`. Re-run `mdoq:varnish:vcl:apply` after changing the Cloudflare tag prefix.
+The query parameter inventory module also inserts registered snippets when generating its VCL files.

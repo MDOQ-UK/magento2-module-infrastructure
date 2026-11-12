@@ -3,12 +3,15 @@
 namespace MDOQ\Infrastructure\Model;
 
 use MDOQ\Infrastructure\Api\VarnishServiceInterface;
+use MDOQ\Infrastructure\Model\Vcl\SnippetComposer;
 use RuntimeException;
 
 class VarnishService implements VarnishServiceInterface
 {
-    public function __construct(private VarnishManagerClient $managerClient)
-    {
+    public function __construct(
+        private VarnishManagerClient $managerClient,
+        private SnippetComposer $snippetComposer
+    ) {
     }
 
     public function updateVcl(string $vclContent): array
@@ -16,6 +19,9 @@ class VarnishService implements VarnishServiceInterface
         if (trim($vclContent) === '') {
             throw new RuntimeException('VCL content cannot be empty.');
         }
+
+        // Every upload path (admin form, CLI, other modules) gets the registered module snippets.
+        $vclContent = $this->snippetComposer->compose($vclContent);
 
         $temporaryPath = tempnam(sys_get_temp_dir(), 'mdoq-varnish-vcl-');
         if ($temporaryPath === false) {
