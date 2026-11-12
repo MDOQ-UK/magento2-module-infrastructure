@@ -14,5 +14,10 @@ $layoutHandles = $block->getLayout()->getUpdate()->getHandles();
                 <span><?= $block->escapeHtml(__('PHP')) ?></span>
             </a>
         </li>
+        <li class="admin__page-nav-item<?= in_array('mdoq_infrastructure_cache_index', $layoutHandles, true) ? ' _active' : '' ?>">
+            <a class="admin__page-nav-link" href="<?= $block->escapeUrl($block->getUrl('mdoq_infrastructure/cache/index')) ?>">
+                <span><?= $block->escapeHtml(__('Cache')) ?></span>
+            </a>
+        </li>
     </ul>
 </nav>

@@ -7,6 +7,8 @@
         <referenceContainer name="content">
             <block class="Magento\Backend\Block\Template" name="mdoq.infrastructure.varnish" template="MDOQ_Infrastructure::varnish.phtml">
                 <container name="mdoq.infrastructure.varnish.vcl_actions" as="vcl_actions" label="Varnish VCL panel actions" />
+                <container name="mdoq.infrastructure.varnish.vcl_comparison" as="vcl_comparison" label="Varnish VCL comparison" />
+                <container name="mdoq.infrastructure.varnish.vcl_latest" as="vcl_latest" label="Latest generated VCL" />
             </block>
         </referenceContainer>
     </body>

@@ -46,19 +46,28 @@
     </section>
 
     <section id="mdoq-vcl-panel" class="mdoq-varnish-panel" role="tabpanel" hidden>
-        <h2><?= $block->escapeHtml(__('Upload VCL')) ?></h2>
-        <form id="mdoq-vcl-upload" action="<?= $block->escapeUrl($block->getUrl('mdoq_infrastructure/varnish/upload')) ?>" method="post" enctype="multipart/form-data">
+        <div class="mdoq-upload-row">
+            <button id="mdoq-vcl-upload-toggle" class="action-secondary" type="button" aria-controls="mdoq-vcl-upload" aria-expanded="false"><?= $block->escapeHtml(__('Upload VCL')) ?></button>
+            <?= $block->getChildHtml('vcl_actions') ?>
+        </div>
+        <form id="mdoq-vcl-upload" action="<?= $block->escapeUrl($block->getUrl('mdoq_infrastructure/varnish/upload')) ?>" method="post" enctype="multipart/form-data" hidden>
             <?= $block->getBlockHtml('formkey') ?>
             <div class="mdoq-upload-row">
                 <input id="mdoq-vcl-file" type="file" name="vcl_file" accept=".vcl" required>
                 <button id="mdoq-vcl-submit" class="action-primary" type="submit"><?= $block->escapeHtml(__('Upload VCL')) ?></button>
-                <?= $block->getChildHtml('vcl_actions') ?>
             </div>
         </form>
-        <p id="mdoq-vcl-status" class="message message-notice" aria-live="polite"><?= $block->escapeHtml(__('Select a .vcl file to upload.')) ?></p>
-        <h2><?= $block->escapeHtml(__('Current VCL')) ?></h2>
-        <p id="mdoq-vcl-modified" class="mdoq-vcl-meta"><?= $block->escapeHtml(__('Last modified: --')) ?></p>
-        <pre id="mdoq-vcl-code" class="mdoq-vcl-code"><?= $block->escapeHtml(__('Loading VCL configuration...')) ?></pre>
+        <p id="mdoq-vcl-status" class="message message-notice" aria-live="polite" hidden></p>
+        <?= $block->getChildHtml('vcl_comparison') ?>
+        <?php $latestVcl = $block->getChildHtml('vcl_latest'); ?>
+        <div class="mdoq-vcl-columns<?= $latestVcl ? ' _with-latest' : '' ?>">
+            <div class="mdoq-vcl-column">
+                <h2><?= $block->escapeHtml(__('Current VCL')) ?></h2>
+                <p id="mdoq-vcl-modified" class="mdoq-vcl-meta"><?= $block->escapeHtml(__('Last modified: --')) ?></p>
+                <pre id="mdoq-vcl-code" class="mdoq-vcl-code"><?= $block->escapeHtml(__('Loading VCL configuration...')) ?></pre>
+            </div>
+            <?= /* @noEscape */ $latestVcl ?>
+        </div>
     </section>
 </div>
 
@@ -75,9 +84,16 @@
     #mdoq-varnish-app .mdoq-table-wrap td { overflow-wrap: anywhere; }
     #mdoq-varnish-app .mdoq-table-wrap tr._warning { background: #fff4e5; }
     #mdoq-varnish-app .mdoq-upload-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+    #mdoq-varnish-app #mdoq-vcl-upload { margin-top: 12px; }
+    #mdoq-varnish-app [hidden] { display: none; }
+    #mdoq-varnish-app .mdoq-vcl-columns._with-latest { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+    #mdoq-varnish-app .mdoq-vcl-column { min-width: 0; }
     #mdoq-varnish-app .mdoq-vcl-meta { color: #666; }
     #mdoq-varnish-app .mdoq-vcl-code { max-height: 65vh; overflow: auto; padding: 16px; border: 1px solid #adadad; background: #f5f5f5; white-space: pre; }
-    @media (max-width: 767px) { #mdoq-varnish-app .mdoq-varnish-tab { padding: 8px 10px; } }
+    @media (max-width: 767px) {
+        #mdoq-varnish-app .mdoq-varnish-tab { padding: 8px 10px; }
+        #mdoq-varnish-app .mdoq-vcl-columns._with-latest { grid-template-columns: minmax(0, 1fr); }
+    }
 </style>
 
 <script>
@@ -244,6 +260,7 @@
             document.getElementById('mdoq-vcl-code').textContent = error.message || 'Failed to load VCL configuration.';
             document.getElementById('mdoq-vcl-modified').textContent = 'Last modified: --';
         }
+        document.dispatchEvent(new CustomEvent('mdoq-varnish:vcl-loaded'));
     }
 
     function selectTab(name) {
@@ -283,8 +300,17 @@
     const form = document.getElementById('mdoq-vcl-upload');
     const status = document.getElementById('mdoq-vcl-status');
     const submit = document.getElementById('mdoq-vcl-submit');
+    const uploadToggle = document.getElementById('mdoq-vcl-upload-toggle');
+    uploadToggle.addEventListener('click', function () {
+        form.hidden = !form.hidden;
+        uploadToggle.setAttribute('aria-expanded', String(!form.hidden));
+        if (!form.hidden) {
+            document.getElementById('mdoq-vcl-file').focus();
+        }
+    });
     form.addEventListener('submit', async function (event) {
         event.preventDefault();
+        status.hidden = false;
         const file = document.getElementById('mdoq-vcl-file').files[0];
         if (!file || !file.name.toLowerCase().endsWith('.vcl')) {
             status.textContent = 'Select a .vcl file before uploading.';
@@ -308,6 +334,7 @@
 
     // Hooks for other modules' actions: report progress and ask for the VCL view to refresh.
     document.addEventListener('mdoq-varnish:status', function (event) {
+        status.hidden = false;
         status.textContent = event.detail.message;
         status.className = 'message message-' + (event.detail.type || 'notice');
     });

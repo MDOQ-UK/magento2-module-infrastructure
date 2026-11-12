@@ -1,0 +1,113 @@
+<?php
+/** @var \MDOQ\Infrastructure\Block\Adminhtml\Cache $block */
+$report = $block->getReport();
+$scopeLabels = [
+    'sessions' => __('Sessions'),
+    'default' => __('Default cache'),
+    'page_cache' => __('Page cache'),
+];
+$displayValue = static function ($value) use ($block): string {
+    if ($value === null) {
+        return (string)__('Not set');
+    }
+
+    return is_scalar($value)
+        ? $block->escapeHtml((string)$value)
+        : $block->escapeHtml((string)json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+};
+?>
+<div class="mdoq-cache">
+    <div class="mdoq-cache-heading">
+        <div>
+            <h1 class="page-title"><?= $block->escapeHtml(__('Redis Cache Compression')) ?></h1>
+            <p><?= $block->escapeHtml(__('Recommended compression settings for Redis sessions and cache frontends.')) ?></p>
+        </div>
+        <span class="mdoq-cache-version">
+            <?= $block->escapeHtml(__('Magento %1', $report['version'])) ?>
+            <?php if ($report['recommendation_version'] !== null): ?>
+                | <?= $block->escapeHtml(__('Recommendations %1', $report['recommendation_version'])) ?>
+            <?php endif; ?>
+        </span>
+    </div>
+
+    <div class="message <?= $report['compression_missing'] ? 'message-error' : 'message-notice' ?>">
+        <div><?= $block->escapeHtml($report['compression_message']) ?></div>
+    </div>
+
+    <?php foreach ($report['scopes'] as $scope): ?>
+        <section class="mdoq-cache-scope">
+            <h2><?= $block->escapeHtml($scopeLabels[$scope['id']] ?? $scope['id']) ?></h2>
+            <?php if (!$scope['applicable']): ?>
+                <div class="message message-notice">
+                    <div><?= $block->escapeHtml($scope['reason']) ?></div>
+                </div>
+            <?php else: ?>
+                <?php if ($scope['warning']): ?>
+                    <div class="message message-warning">
+                        <div><?= $block->escapeHtml(__($scope['warning'])) ?></div>
+                    </div>
+                <?php endif; ?>
+                <?php if ($scope['is_recommended']): ?>
+                    <div class="message message-success">
+                        <div><?= $block->escapeHtml(__('All applicable settings match the recommendation.')) ?></div>
+                    </div>
+                <?php else: ?>
+                    <p><?= $block->escapeHtml(__('Change the following values to match the recommendation:')) ?></p>
+                    <div class="mdoq-cache-table-wrap">
+                        <table class="data-grid">
+                            <thead>
+                                <tr>
+                                    <th><?= $block->escapeHtml(__('Configuration path')) ?></th>
+                                    <th><?= $block->escapeHtml(__('Current value')) ?></th>
+                                    <th><?= $block->escapeHtml(__('Recommended value')) ?></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($scope['changes'] as $change): ?>
+                                    <tr>
+                                        <td><code><?= $block->escapeHtml($change['path']) ?></code></td>
+                                        <td><?= $displayValue($change['current']) ?></td>
+                                        <td><?= $displayValue($change['recommended']) ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+            <?php endif; ?>
+        </section>
+    <?php endforeach; ?>
+
+    <?php if ($block->hasChanges($report)): ?>
+        <form id="mdoq-cache-apply-form" method="post" action="<?= $block->escapeUrl($block->getUrl('mdoq_infrastructure/cache/apply')) ?>" data-confirm-message="<?= $block->escapeHtmlAttr(__('Apply the recommended Redis compression settings to env.php?')) ?>">
+            <input type="hidden" name="form_key" value="<?= $block->escapeHtmlAttr($block->getFormKeyValue()) ?>" />
+            <button type="submit" class="action-primary"><?= $block->escapeHtml(__('Apply recommended settings')) ?></button>
+        </form>
+    <?php endif; ?>
+</div>
+
+<style>
+    .mdoq-cache-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+    .mdoq-cache-heading p { margin: -10px 0 16px; color: #666; }
+    .mdoq-cache-version { padding: 8px 12px; border: 1px solid #adadad; background: #f5f5f5; font-weight: 600; }
+    .mdoq-cache-scope { margin: 20px 0; }
+    .mdoq-cache-scope h2 { margin: 20px 0 12px; font-size: 1.8rem; }
+    .mdoq-cache-table-wrap { max-width: 100%; overflow-x: auto; margin-bottom: 16px; }
+    .mdoq-cache-table-wrap table { min-width: 600px; }
+    .mdoq-cache-table-wrap td { overflow-wrap: anywhere; }
+    .mdoq-cache-table-wrap code { white-space: normal; }
+</style>
+
+<script>
+(function () {
+    'use strict';
+    const form = document.getElementById('mdoq-cache-apply-form');
+    if (form) {
+        form.addEventListener('submit', function (event) {
+            if (!window.confirm(form.dataset.confirmMessage)) {
+                event.preventDefault();
+            }
+        });
+    }
+}());
+</script>
